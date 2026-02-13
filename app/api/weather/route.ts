@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const FORECAST_BASE = 'https://api.open-meteo.com/v1/forecast';
-const ARCHIVE_BASE = 'https://archive-api.open-meteo.com/v1/archive';
+// Forecast API covers 92 days of historical data + 16 days ahead
+const WEATHER_BASE = 'https://api.open-meteo.com/v1/forecast';
 const POLLEN_BASE = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 
 const DAILY_PARAMS = [
@@ -9,16 +9,17 @@ const DAILY_PARAMS = [
   'temperature_2m_min',
   'precipitation_sum',
   'rain_sum',
-  'windspeed_10m_max',
+  'wind_speed_10m_max',
   'uv_index_max',
-  'relative_humidity_2m_mean',
+  'relative_humidity_2m_max',
+  'relative_humidity_2m_min',
 ].join(',');
 
 const HOURLY_PARAMS = [
   'temperature_2m',
   'relative_humidity_2m',
   'precipitation',
-  'windspeed_10m',
+  'wind_speed_10m',
   'uv_index',
 ].join(',');
 
@@ -31,16 +32,20 @@ const POLLEN_DAILY_PARAMS = [
   'ragweed_pollen',
 ].join(',');
 
-function getWeatherBase(startDate: string): string {
-  const start = new Date(startDate + 'T00:00:00');
-  const now = new Date();
-  const diffDays = (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-  return diffDays > 10 ? ARCHIVE_BASE : FORECAST_BASE;
-}
-
 function sumNullable(values: (number | null | undefined)[]): number | null {
   const valid = values.filter((v): v is number => v != null);
   return valid.length > 0 ? valid.reduce((a, b) => a + b, 0) : null;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function safeFetchJson(url: string): Promise<any> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(request: Request) {
@@ -59,39 +64,25 @@ export async function GET(request: Request) {
   }
 
   try {
-    const weatherBase = getWeatherBase(start);
-
-    const dailyWeatherUrl = `${weatherBase}?latitude=${lat}&longitude=${lon}&daily=${DAILY_PARAMS}&start_date=${start}&end_date=${end}&timezone=auto`;
+    const dailyWeatherUrl = `${WEATHER_BASE}?latitude=${lat}&longitude=${lon}&daily=${DAILY_PARAMS}&start_date=${start}&end_date=${end}&timezone=auto`;
     const dailyPollenUrl = `${POLLEN_BASE}?latitude=${lat}&longitude=${lon}&daily=${POLLEN_DAILY_PARAMS}&start_date=${start}&end_date=${end}&timezone=auto`;
 
-    const fetches: Promise<Response>[] = [
+    // Fetch weather (required) and pollen (optional - not available in all regions)
+    const [dailyWeatherRes, dailyPollen] = await Promise.all([
       fetch(dailyWeatherUrl),
-      fetch(dailyPollenUrl),
-    ];
-
-    if (focusDay) {
-      const hourlyWeatherUrl = `${weatherBase}?latitude=${lat}&longitude=${lon}&hourly=${HOURLY_PARAMS}&start_date=${focusDay}&end_date=${focusDay}&timezone=auto`;
-      const hourlyPollenUrl = `${POLLEN_BASE}?latitude=${lat}&longitude=${lon}&hourly=${POLLEN_DAILY_PARAMS}&start_date=${focusDay}&end_date=${focusDay}&timezone=auto`;
-      fetches.push(fetch(hourlyWeatherUrl), fetch(hourlyPollenUrl));
-    }
-
-    const responses = await Promise.all(fetches);
-
-    for (const res of responses) {
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('Open-Meteo error:', res.status, text);
-        return NextResponse.json(
-          { error: 'Weather API request failed' },
-          { status: 502 },
-        );
-      }
-    }
-
-    const [dailyWeather, dailyPollen] = await Promise.all([
-      responses[0].json(),
-      responses[1].json(),
+      safeFetchJson(dailyPollenUrl),
     ]);
+
+    if (!dailyWeatherRes.ok) {
+      const text = await dailyWeatherRes.text();
+      console.error('Open-Meteo daily weather error:', dailyWeatherRes.status, text);
+      return NextResponse.json(
+        { error: `Weather API failed: ${text}` },
+        { status: 502 },
+      );
+    }
+
+    const dailyWeather = await dailyWeatherRes.json();
 
     // Combine daily weather + pollen into WeatherDay[]
     const dates: string[] = dailyWeather.daily?.time || [];
@@ -101,37 +92,40 @@ export async function GET(request: Request) {
       temperature_min: dailyWeather.daily.temperature_2m_min?.[i] ?? null,
       precipitation_sum: dailyWeather.daily.precipitation_sum?.[i] ?? null,
       rain_sum: dailyWeather.daily.rain_sum?.[i] ?? null,
-      windspeed_max: dailyWeather.daily.windspeed_10m_max?.[i] ?? null,
+      windspeed_max: dailyWeather.daily.wind_speed_10m_max?.[i] ?? null,
       uv_index_max: dailyWeather.daily.uv_index_max?.[i] ?? null,
-      humidity_mean: dailyWeather.daily.relative_humidity_2m_mean?.[i] ?? null,
-      pollen_tree: sumNullable([
+      humidity_mean: dailyWeather.daily.relative_humidity_2m_max?.[i] != null && dailyWeather.daily.relative_humidity_2m_min?.[i] != null
+        ? Math.round((dailyWeather.daily.relative_humidity_2m_max[i] + dailyWeather.daily.relative_humidity_2m_min[i]) / 2)
+        : null,
+      pollen_tree: dailyPollen ? sumNullable([
         dailyPollen.daily?.alder_pollen?.[i],
         dailyPollen.daily?.birch_pollen?.[i],
         dailyPollen.daily?.olive_pollen?.[i],
-      ]),
-      pollen_grass: dailyPollen.daily?.grass_pollen?.[i] ?? null,
-      pollen_weed: sumNullable([
+      ]) : null,
+      pollen_grass: dailyPollen?.daily?.grass_pollen?.[i] ?? null,
+      pollen_weed: dailyPollen ? sumNullable([
         dailyPollen.daily?.mugwort_pollen?.[i],
         dailyPollen.daily?.ragweed_pollen?.[i],
-      ]),
+      ]) : null,
     }));
 
     // Build hourly data if focus day was requested
     let hourly = null;
-    if (focusDay && responses.length >= 4) {
-      const [hourlyWeather, hourlyPollen] = await Promise.all([
-        responses[2].json(),
-        responses[3].json(),
-      ]);
+    if (focusDay) {
+      const hourlyWeatherUrl = `${WEATHER_BASE}?latitude=${lat}&longitude=${lon}&hourly=${HOURLY_PARAMS}&start_date=${focusDay}&end_date=${focusDay}&timezone=auto`;
+      const hourlyWeatherRes = await fetch(hourlyWeatherUrl);
 
-      hourly = {
-        time: hourlyWeather.hourly?.time || [],
-        temperature_2m: hourlyWeather.hourly?.temperature_2m || [],
-        relative_humidity_2m: hourlyWeather.hourly?.relative_humidity_2m || [],
-        precipitation: hourlyWeather.hourly?.precipitation || [],
-        windspeed_10m: hourlyWeather.hourly?.windspeed_10m || [],
-        uv_index: hourlyWeather.hourly?.uv_index || [],
-      };
+      if (hourlyWeatherRes.ok) {
+        const hourlyWeather = await hourlyWeatherRes.json();
+        hourly = {
+          time: hourlyWeather.hourly?.time || [],
+          temperature_2m: hourlyWeather.hourly?.temperature_2m || [],
+          relative_humidity_2m: hourlyWeather.hourly?.relative_humidity_2m || [],
+          precipitation: hourlyWeather.hourly?.precipitation || [],
+          windspeed_10m: hourlyWeather.hourly?.wind_speed_10m || [],
+          uv_index: hourlyWeather.hourly?.uv_index || [],
+        };
+      }
     }
 
     return NextResponse.json({ daily, hourly });
