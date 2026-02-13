@@ -9,6 +9,7 @@ import { useOuraConnection } from '@/hooks/useOuraConnection';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import DashboardHeader from '@/components/DashboardHeader';
 import type { DashboardTab } from '@/components/DashboardHeader';
+import Sidebar from '@/components/Sidebar';
 import GoalsPanel from '@/components/GoalsPanel';
 import ArtView from '@/components/ArtView';
 import SettingsPanel from '@/components/SettingsPanel';
@@ -41,7 +42,7 @@ export default function DashboardPage() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [bgEffect, setBgEffect] = useState('particles');
   const [debugData, setDebugData] = useState(true);
-  const [activeTab, setActiveTab] = useState<DashboardTab>('data');
+  const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const artMode = activeTab === 'art';
 
   // Viewer state for admin/artist
@@ -287,129 +288,155 @@ export default function DashboardPage() {
         onGcalSelectedIdsChange={gcal.setSelectedIds}
       />
 
-      <div className={`dashboard${artMode ? ' art-mode' : ''}`}>
-        <DashboardHeader
-          label={monthData.label}
-          onPrev={monthData.prevMonth}
-          onNext={monthData.nextMonth}
-          onSettingsToggle={() => setSettingsOpen(o => !o)}
-          year={monthData.year}
-          month={monthData.month}
-          selectedDay={monthData.day}
-          onDateChange={handleDateChange}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+      <div className={`app-layout${artMode ? ' art-mode' : ''}`}>
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {activeTab === 'data' && <SyncPrompt />}
-
-        {/* Viewer selector for admin/artist */}
-        {activeTab === 'data' && (userRole === 'admin' || userRole === 'artist') && (
-          <div className="viewer-selector-bar">
-            {canSwitchMode && (
-              <div className="viewer-mode-toggle">
-                <button
-                  className={`viewer-mode-btn ${viewMode === 'user' ? 'active' : ''}`}
-                  onClick={() => setViewMode('user')}
-                >
-                  User
-                </button>
-                <button
-                  className={`viewer-mode-btn ${viewMode === 'admin' ? 'active' : ''}`}
-                  onClick={() => setViewMode('admin')}
-                >
-                  Admin
-                </button>
-                <button
-                  className={`viewer-mode-btn ${viewMode === 'artist' ? 'active' : ''}`}
-                  onClick={() => setViewMode('artist')}
-                >
-                  Artist
-                </button>
-              </div>
-            )}
-            {activeViewMode && (
-              <>
-                <span className="viewer-label">Viewing:</span>
-                <select
-                  className="viewer-select"
-                  value={viewingUserId || ''}
-                  onChange={e => {
-                    const id = e.target.value || null;
-                    setViewingUserId(id);
-                    const user = availableUsers.find(u => u.id === id);
-                    setViewingUserLabel(user?.label || '');
-                  }}
-                >
-                  <option value="">My Data</option>
-                  {availableUsers.map(u => (
-                    <option key={u.id} value={u.id}>{u.label}</option>
-                  ))}
-                </select>
-                {isViewingOther && (
-                  <span className="viewer-badge">{activeViewMode === 'admin' ? 'Admin View' : 'Artist View'}</span>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'data' && (
-          <>
-            {/* Intraday 24h Section */}
-            <section className="metric-section">
-              <h2 className="section-title">24-Hour View</h2>
-              <DayIntraday
-                day={displayDayRecord}
-                prevDay={displayPrevDay}
-                onDayUpdated={isViewingOther ? undefined : monthData.refresh}
-                gcalEvents={isViewingOther ? [] : gcalEvents}
-                readOnly={isViewingOther}
-              />
-            </section>
-
-            {/* Sleep Section */}
-            <section className="metric-section">
-              <h2 className="section-title sleep">Sleep</h2>
-              <SleepCharts data={displayData} onDayClick={setSelectedDay} />
-              <SleepOverlay data={displayData} />
-            </section>
-
-            {/* Heart Rate Section */}
-            <section className="metric-section">
-              <h2 className="section-title heart">Heart Rate</h2>
-              <HeartCharts data={displayData} onDayClick={setSelectedDay} />
-              <HeartRateOverlay data={displayData} />
-            </section>
-
-            {/* Activity Section */}
-            <section className="metric-section">
-              <h2 className="section-title workout">Activity</h2>
-              <ActivityCharts data={displayData} onDayClick={setSelectedDay} />
-              <ActivityOverlay data={displayData} />
-            </section>
-
-            {/* Stress Section */}
-            <section className="metric-section">
-              <h2 className="section-title stress">Stress</h2>
-              <StressCharts data={displayData} onDayClick={setSelectedDay} />
-            </section>
-          </>
-        )}
-
-        {activeTab === 'goals' && (
-          <GoalsPanel
-            data={displayData}
-            focusDay={displayDayRecord}
-            focusDate={focusDateStr}
-            settings={settings}
-            onUpdateSettings={updateSettings}
+        <div className="main-content">
+          <DashboardHeader
+            label={monthData.label}
+            onPrev={monthData.prevMonth}
+            onNext={monthData.nextMonth}
+            onSettingsToggle={() => setSettingsOpen(o => !o)}
+            year={monthData.year}
+            month={monthData.month}
+            selectedDay={monthData.day}
+            onDateChange={handleDateChange}
           />
-        )}
 
-        {activeTab === 'art' && (
-          <ArtView data={displayData} focusDay={displayDayRecord} prevDay={displayPrevDay} />
-        )}
+          {/* Viewer selector for admin/artist (shared between overview & internal) */}
+          {(activeTab === 'overview' || activeTab === 'internal') && (userRole === 'admin' || userRole === 'artist') && (
+            <div className="viewer-selector-bar">
+              {canSwitchMode && (
+                <div className="viewer-mode-toggle">
+                  <button
+                    className={`viewer-mode-btn ${viewMode === 'user' ? 'active' : ''}`}
+                    onClick={() => setViewMode('user')}
+                  >
+                    User
+                  </button>
+                  <button
+                    className={`viewer-mode-btn ${viewMode === 'admin' ? 'active' : ''}`}
+                    onClick={() => setViewMode('admin')}
+                  >
+                    Admin
+                  </button>
+                  <button
+                    className={`viewer-mode-btn ${viewMode === 'artist' ? 'active' : ''}`}
+                    onClick={() => setViewMode('artist')}
+                  >
+                    Artist
+                  </button>
+                </div>
+              )}
+              {activeViewMode && (
+                <>
+                  <span className="viewer-label">Viewing:</span>
+                  <select
+                    className="viewer-select"
+                    value={viewingUserId || ''}
+                    onChange={e => {
+                      const id = e.target.value || null;
+                      setViewingUserId(id);
+                      const user = availableUsers.find(u => u.id === id);
+                      setViewingUserLabel(user?.label || '');
+                    }}
+                  >
+                    <option value="">My Data</option>
+                    {availableUsers.map(u => (
+                      <option key={u.id} value={u.id}>{u.label}</option>
+                    ))}
+                  </select>
+                  {isViewingOther && (
+                    <span className="viewer-badge">{activeViewMode === 'admin' ? 'Admin View' : 'Artist View'}</span>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Overview: 24-Hour View + Goals */}
+          {activeTab === 'overview' && (
+            <>
+              <SyncPrompt />
+              <section className="metric-section">
+                <h2 className="section-title">24-Hour View</h2>
+                <DayIntraday
+                  day={displayDayRecord}
+                  prevDay={displayPrevDay}
+                  onDayUpdated={isViewingOther ? undefined : monthData.refresh}
+                  gcalEvents={isViewingOther ? [] : gcalEvents}
+                  readOnly={isViewingOther}
+                />
+              </section>
+              <GoalsPanel
+                data={displayData}
+                focusDay={displayDayRecord}
+                focusDate={focusDateStr}
+                settings={settings}
+                onUpdateSettings={updateSettings}
+              />
+            </>
+          )}
+
+          {/* External Stats: placeholder */}
+          {activeTab === 'external' && (
+            <section className="metric-section placeholder-page">
+              <h2 className="section-title">External Stats</h2>
+              <div className="placeholder-content">
+                <span className="placeholder-icon">{'\u2197'}</span>
+                <p className="placeholder-text">External Stats coming soon</p>
+                <p className="placeholder-subtext">
+                  Environmental data, location analytics, and external health factors will appear here.
+                </p>
+              </div>
+            </section>
+          )}
+
+          {/* Internal Stats: all chart sections */}
+          {activeTab === 'internal' && (
+            <>
+              <SyncPrompt />
+              <section className="metric-section">
+                <h2 className="section-title sleep">Sleep</h2>
+                <SleepCharts data={displayData} onDayClick={setSelectedDay} />
+                <SleepOverlay data={displayData} />
+              </section>
+              <section className="metric-section">
+                <h2 className="section-title heart">Heart Rate</h2>
+                <HeartCharts data={displayData} onDayClick={setSelectedDay} />
+                <HeartRateOverlay data={displayData} />
+              </section>
+              <section className="metric-section">
+                <h2 className="section-title workout">Activity</h2>
+                <ActivityCharts data={displayData} onDayClick={setSelectedDay} />
+                <ActivityOverlay data={displayData} />
+              </section>
+              <section className="metric-section">
+                <h2 className="section-title stress">Stress</h2>
+                <StressCharts data={displayData} onDayClick={setSelectedDay} />
+              </section>
+            </>
+          )}
+
+          {/* Mind: placeholder */}
+          {activeTab === 'mind' && (
+            <section className="metric-section placeholder-page">
+              <h2 className="section-title">Mind</h2>
+              <div className="placeholder-content">
+                <span className="placeholder-icon">{'\u2734'}</span>
+                <p className="placeholder-text">Mind analytics coming soon</p>
+                <p className="placeholder-subtext">
+                  Meditation tracking, cognitive metrics, and mental wellness data will appear here.
+                </p>
+              </div>
+            </section>
+          )}
+
+          {/* Art */}
+          {activeTab === 'art' && (
+            <ArtView data={displayData} focusDay={displayDayRecord} prevDay={displayPrevDay} />
+          )}
+        </div>
       </div>
 
       <DayDetail

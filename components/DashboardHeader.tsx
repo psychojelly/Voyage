@@ -2,7 +2,7 @@
 
 import UserMenu from './UserMenu';
 
-export type DashboardTab = 'data' | 'goals' | 'art';
+export type DashboardTab = 'overview' | 'external' | 'internal' | 'mind' | 'art';
 
 interface DashboardHeaderProps {
   label: string;
@@ -13,8 +13,6 @@ interface DashboardHeaderProps {
   month: number;
   selectedDay: number | null;
   onDateChange: (year: number, month: number, day: number) => void;
-  activeTab?: DashboardTab;
-  onTabChange?: (tab: DashboardTab) => void;
 }
 
 export default function DashboardHeader({
@@ -26,8 +24,6 @@ export default function DashboardHeader({
   month,
   selectedDay,
   onDateChange,
-  activeTab = 'data',
-  onTabChange,
 }: DashboardHeaderProps) {
   const dateValue = selectedDay
     ? `${year}-${String(month).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`
@@ -69,19 +65,6 @@ export default function DashboardHeader({
       </div>
 
       <div className="header-actions">
-        {onTabChange && (
-          <div className="dash-tab-toggle">
-            {(['data', 'goals', 'art'] as DashboardTab[]).map(tab => (
-              <span
-                key={tab}
-                className={`dash-tab-option ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => onTabChange(tab)}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </span>
-            ))}
-          </div>
-        )}
         <button className="icon-btn" aria-label="Settings" onClick={onSettingsToggle}>&#9881;</button>
         <UserMenu />
       </div>
