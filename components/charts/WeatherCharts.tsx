@@ -170,22 +170,30 @@ export default function WeatherCharts({ data, onDayClick }: WeatherChartsProps) 
     };
   }, [data]);
 
-  // Pollen: stacked bar
+  // Pollen: stacked bar by species
   const pollenConfig = useMemo((): ChartConfiguration | null => {
     if (!data.length) return null;
-    const hasAny = data.some(d =>
-      (d.pollen_tree ?? 0) > 0 || (d.pollen_grass ?? 0) > 0 || (d.pollen_weed ?? 0) > 0
-    );
-    if (!hasAny) return null;
     return {
       type: 'bar',
       data: {
         labels: getDayLabels(data),
         datasets: [
           {
-            label: 'Tree',
-            data: data.map(d => d.pollen_tree ?? 0),
+            label: 'Alder',
+            data: data.map(d => d.pollen_alder ?? 0),
+            backgroundColor: '#00b894',
+            stack: 'pollen',
+          },
+          {
+            label: 'Birch',
+            data: data.map(d => d.pollen_birch ?? 0),
             backgroundColor: '#55efc4',
+            stack: 'pollen',
+          },
+          {
+            label: 'Olive',
+            data: data.map(d => d.pollen_olive ?? 0),
+            backgroundColor: '#00cec9',
             stack: 'pollen',
           },
           {
@@ -195,9 +203,15 @@ export default function WeatherCharts({ data, onDayClick }: WeatherChartsProps) 
             stack: 'pollen',
           },
           {
-            label: 'Weed',
-            data: data.map(d => d.pollen_weed ?? 0),
+            label: 'Mugwort',
+            data: data.map(d => d.pollen_mugwort ?? 0),
             backgroundColor: '#fab1a0',
+            stack: 'pollen',
+          },
+          {
+            label: 'Ragweed',
+            data: data.map(d => d.pollen_ragweed ?? 0),
+            backgroundColor: '#e17055',
             stack: 'pollen',
           },
         ],

@@ -97,12 +97,17 @@ export async function GET(request: Request) {
       humidity_mean: dailyWeather.daily.relative_humidity_2m_max?.[i] != null && dailyWeather.daily.relative_humidity_2m_min?.[i] != null
         ? Math.round((dailyWeather.daily.relative_humidity_2m_max[i] + dailyWeather.daily.relative_humidity_2m_min[i]) / 2)
         : null,
+      pollen_alder: dailyPollen?.daily?.alder_pollen?.[i] ?? null,
+      pollen_birch: dailyPollen?.daily?.birch_pollen?.[i] ?? null,
+      pollen_olive: dailyPollen?.daily?.olive_pollen?.[i] ?? null,
+      pollen_grass: dailyPollen?.daily?.grass_pollen?.[i] ?? null,
+      pollen_mugwort: dailyPollen?.daily?.mugwort_pollen?.[i] ?? null,
+      pollen_ragweed: dailyPollen?.daily?.ragweed_pollen?.[i] ?? null,
       pollen_tree: dailyPollen ? sumNullable([
         dailyPollen.daily?.alder_pollen?.[i],
         dailyPollen.daily?.birch_pollen?.[i],
         dailyPollen.daily?.olive_pollen?.[i],
       ]) : null,
-      pollen_grass: dailyPollen?.daily?.grass_pollen?.[i] ?? null,
       pollen_weed: dailyPollen ? sumNullable([
         dailyPollen.daily?.mugwort_pollen?.[i],
         dailyPollen.daily?.ragweed_pollen?.[i],

@@ -73,6 +73,11 @@ export interface WeatherDay {
   pollen_tree: number | null;
   pollen_grass: number | null;
   pollen_weed: number | null;
+  pollen_alder: number | null;
+  pollen_birch: number | null;
+  pollen_olive: number | null;
+  pollen_mugwort: number | null;
+  pollen_ragweed: number | null;
 }
 
 export interface WeatherHourly {

@@ -21,9 +21,10 @@ interface DayIntradayProps {
   onDayUpdated?: () => void;
   gcalEvents?: HealthEvent[];
   readOnly?: boolean;
+  autoDream?: boolean;
 }
 
-export default function DayIntraday({ day, prevDay, onDayUpdated, gcalEvents = [], readOnly }: DayIntradayProps) {
+export default function DayIntraday({ day, prevDay, onDayUpdated, gcalEvents = [], readOnly, autoDream }: DayIntradayProps) {
   const store = useStore();
   const [showSleep, setShowSleep] = useState(true);
   const [showHeart, setShowHeart] = useState(true);
@@ -39,6 +40,15 @@ export default function DayIntraday({ day, prevDay, onDayUpdated, gcalEvents = [
 
   const markerHitboxes = useRef<MarkerHitbox[]>([]);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Auto-open dream form when autoDream prop becomes true
+  useEffect(() => {
+    if (autoDream) {
+      setShowForm(true);
+      setDreamMode(true);
+      setEditingEvent(null);
+    }
+  }, [autoDream]);
 
   const effectiveStart = viewMode === 'sleep-effector' ? 8 : startHour;
 

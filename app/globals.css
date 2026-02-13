@@ -18,6 +18,7 @@
   --accent-stress: #ffa500;
   --accent-danger: #d63031;
   --accent-weather: #81ecec;
+  --accent-mind: #a29bfe;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
   --radius: 12px;
   --radius-sm: 8px;
@@ -492,6 +493,7 @@ body {
 .section-title.workout { color: var(--accent-workout); }
 .section-title.stress { color: var(--accent-stress); }
 .section-title.weather { color: var(--accent-weather); }
+.section-title.mind { color: var(--accent-mind); }
 
 /* ===== Stats Row ===== */
 .stats-row {
@@ -2071,6 +2073,54 @@ body {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* ===== Mind Action Buttons ===== */
+.mind-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mind-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  background: rgba(26, 26, 46, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.mind-action-btn:hover {
+  border-color: var(--btn-accent, var(--accent-mind));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--btn-accent, var(--accent-mind)) 30%, transparent);
+  background: rgba(26, 26, 46, 0.85);
+}
+
+.mind-action-icon {
+  font-size: 1.6rem;
+}
+
+.mind-action-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .mind-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ===== Placeholder Pages ===== */

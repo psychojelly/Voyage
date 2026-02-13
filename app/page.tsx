@@ -47,6 +47,7 @@ export default function DashboardPage() {
   const [debugData, setDebugData] = useState(true);
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const artMode = activeTab === 'art';
+  const [mindDreamMode, setMindDreamMode] = useState(false);
 
   // Viewer state for admin/artist
   const userRole: UserRole = (session?.user as { role?: UserRole } | undefined)?.role || 'user';
@@ -252,6 +253,33 @@ export default function DashboardPage() {
   const handleDataImported = useCallback(() => {
     monthData.refresh();
   }, [monthData]);
+
+  // Reset mindDreamMode when leaving mind tab
+  useEffect(() => {
+    if (activeTab !== 'mind') setMindDreamMode(false);
+  }, [activeTab]);
+
+  // Create a health-note event on the focused day
+  const handleMindAction = useCallback(async (title: string) => {
+    const dayStr = String(monthData.day).padStart(2, '0');
+    const mStr = String(monthData.month).padStart(2, '0');
+    const dateKey = `${monthData.year}-${mStr}-${dayStr}`;
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const event: HealthEvent = {
+      id: `${title.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+      time,
+      title,
+      category: 'health-note',
+    };
+    const existing = monthData.data.find(d => d.date === dateKey);
+    const dayRecord: DayRecord = existing
+      ? { ...existing, events: [...(existing.events || []), event] }
+      : { date: dateKey, events: [event] };
+    const result = store.saveDay(dayRecord);
+    if (result instanceof Promise) await result;
+    monthData.refresh();
+  }, [monthData, store]);
 
   const handleDebugDataToggle = useCallback(async (enabled: boolean) => {
     setDebugData(enabled);
@@ -468,18 +496,68 @@ export default function DashboardPage() {
             </>
           )}
 
-          {/* Mind: placeholder */}
+          {/* Mind */}
           {activeTab === 'mind' && (
-            <section className="metric-section placeholder-page">
-              <h2 className="section-title">Mind</h2>
-              <div className="placeholder-content">
-                <span className="placeholder-icon">{'\u2734'}</span>
-                <p className="placeholder-text">Mind analytics coming soon</p>
-                <p className="placeholder-subtext">
-                  Meditation tracking, cognitive metrics, and mental wellness data will appear here.
-                </p>
-              </div>
-            </section>
+            <>
+              <section className="metric-section">
+                <h2 className="section-title mind">Mind</h2>
+                <div className="mind-actions">
+                  <button
+                    className="mind-action-btn"
+                    style={{ '--btn-accent': '#74b9ff' } as React.CSSProperties}
+                    onClick={() => setMindDreamMode(true)}
+                  >
+                    <span className="mind-action-icon">{'\uD83C\uDF19'}</span>
+                    <span className="mind-action-label">Dream Recording</span>
+                  </button>
+                  <button
+                    className="mind-action-btn"
+                    style={{ '--btn-accent': '#a29bfe' } as React.CSSProperties}
+                    onClick={() => handleMindAction('Meditation')}
+                  >
+                    <span className="mind-action-icon">{'\uD83E\uDDD8'}</span>
+                    <span className="mind-action-label">Meditation</span>
+                  </button>
+                  <button
+                    className="mind-action-btn"
+                    style={{ '--btn-accent': '#fd79a8' } as React.CSSProperties}
+                    onClick={() => handleMindAction('Dream Check')}
+                  >
+                    <span className="mind-action-icon">{'\u2753'}</span>
+                    <span className="mind-action-label">Dream Check</span>
+                  </button>
+                  <button
+                    className="mind-action-btn"
+                    style={{ '--btn-accent': '#55efc4' } as React.CSSProperties}
+                    onClick={() => handleMindAction('Breathwork')}
+                  >
+                    <span className="mind-action-icon">{'\uD83C\uDF2C\uFE0F'}</span>
+                    <span className="mind-action-label">Breath</span>
+                  </button>
+                </div>
+              </section>
+
+              <section className="metric-section">
+                <h2 className="section-title mind">24-Hour Sleep View</h2>
+                <DayIntraday
+                  day={displayDayRecord}
+                  prevDay={displayPrevDay}
+                  autoDream={mindDreamMode}
+                  onDayUpdated={isViewingOther ? undefined : monthData.refresh}
+                />
+              </section>
+
+              <section className="metric-section">
+                <h2 className="section-title sleep">Sleep Trends</h2>
+                <SleepCharts data={displayData} onDayClick={setSelectedDay} />
+                <SleepOverlay data={displayData} />
+              </section>
+
+              <section className="metric-section">
+                <h2 className="section-title stress">Stress Trends</h2>
+                <StressCharts data={displayData} onDayClick={setSelectedDay} />
+              </section>
+            </>
           )}
 
           {/* Art */}
