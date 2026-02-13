@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Analytics Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+</head>
+<body>
+  <!-- Three.js background canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Settings panel (slide-out) -->
+  <div id="settings-panel" class="settings-panel">
+    <div class="settings-header">
+      <h2>Settings</h2>
+      <span class="version-label">v0.1.0</span>
+      <button id="settings-close" class="icon-btn" aria-label="Close settings">&times;</button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-group">
+        <h3>Oura Ring</h3>
+        <p class="setting-hint">Requires an <a href="https://cloud.ouraring.com/oauth/applications" target="_blank">Oura developer app</a> and active Oura Membership.</p>
+        <label for="oura-client-id">Client ID</label>
+        <input type="text" id="oura-client-id" placeholder="Your Oura app Client ID">
+        <div id="oura-connected" class="connected-badge" style="display:none">
+          <span class="connected-dot"></span>
+          <span>Connected to Oura</span>
+        </div>
+        <button id="connect-oura" class="btn btn-primary">Connect Oura Ring</button>
+        <label for="cors-proxy">CORS Proxy URL</label>
+        <input type="text" id="cors-proxy" placeholder="https://your-proxy.workers.dev">
+        <p class="setting-hint">Required for browser API calls. Deploy a free proxy with Cloudflare Workers, or run locally: <code>npx cors-anywhere</code> &rarr; <code>http://localhost:8080</code></p>
+        <div class="setting-row">
+          <label for="fetch-start">Date Range</label>
+          <div class="date-range">
+            <input type="date" id="fetch-start">
+            <span>to</span>
+            <input type="date" id="fetch-end">
+          </div>
+        </div>
+        <button id="fetch-oura" class="btn btn-primary" style="display:none">Fetch Data</button>
+        <button id="disconnect-oura" class="btn btn-danger" style="display:none">Disconnect</button>
+        <div id="fetch-status" class="status-msg"></div>
+      </div>
+      <div class="setting-group">
+        <h3>3D Background</h3>
+        <label for="bg-effect">Effect</label>
+        <select id="bg-effect">
+          <option value="particles">Particle Field</option>
+          <option value="waves">Wave Surface</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <button id="clear-data" class="btn btn-danger">Clear All Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main dashboard -->
+  <div class="dashboard">
+    <!-- Header -->
+    <header class="dash-header">
+      <h1 class="logo">Health Analytics</h1>
+      <div class="month-nav">
+        <button id="prev-month" class="icon-btn" aria-label="Previous month">&larr;</button>
+        <span id="month-label" class="month-label">February 2026</span>
+        <button id="next-month" class="icon-btn" aria-label="Next month">&rarr;</button>
+      </div>
+      <button id="settings-toggle" class="icon-btn" aria-label="Settings">&#9881;</button>
+    </header>
+
+    <!-- Import section -->
+    <section class="import-section">
+      <div id="drop-zone" class="drop-zone">
+        <p>Drag &amp; drop JSON or CSV files here</p>
+        <span class="drop-zone-hint">or</span>
+        <label class="btn btn-secondary file-label">
+          Browse Files
+          <input type="file" id="file-input" accept=".json,.csv" multiple hidden>
+        </label>
+      </div>
+      <div id="import-status" class="status-msg"></div>
+    </section>
+
+    <!-- Sleep section -->
+    <section class="metric-section" id="sleep-section">
+      <h2 class="section-title">Sleep</h2>
+      <div class="stats-row" id="sleep-stats"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Sleep Stages</h3>
+          <canvas id="sleep-stages-chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Duration Trend</h3>
+          <canvas id="sleep-duration-chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Readiness Score</h3>
+          <canvas id="sleep-readiness-chart"></canvas>
+        </div>
+      </div>
+      <div class="viz-3d-container">
+        <h3>Sleep Terrain</h3>
+        <canvas id="sleep-terrain-canvas" class="viz-3d-canvas"></canvas>
+      </div>
+    </section>
+
+    <!-- Heart Rate section -->
+    <section class="metric-section" id="heart-section">
+      <h2 class="section-title">Heart Rate</h2>
+      <div class="stats-row" id="heart-stats"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Resting Heart Rate</h3>
+          <canvas id="heart-resting-chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Heart Rate Variability</h3>
+          <canvas id="heart-hrv-chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>HR Range</h3>
+          <canvas id="heart-range-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workout section -->
+    <section class="metric-section" id="workout-section">
+      <h2 class="section-title">Workouts &amp; Activity</h2>
+      <div class="stats-row" id="workout-stats"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Daily Steps</h3>
+          <canvas id="workout-steps-chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Active Calories</h3>
+          <canvas id="workout-calories-chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Active Minutes</h3>
+          <canvas id="workout-active-chart"></canvas>
+        </div>
+      </div>
+      <div class="viz-3d-container">
+        <h3>Metric Spheres</h3>
+        <canvas id="metric-spheres-canvas" class="viz-3d-canvas"></canvas>
+      </div>
+    </section>
+
+    <!-- Future integrations placeholder -->
+    <section class="metric-section future-section">
+      <h2 class="section-title">Coming Soon</h2>
+      <div class="coming-soon-grid">
+        <div class="coming-soon-card">
+          <span class="coming-soon-icon">&#9201;</span>
+          <p>Apple Health</p>
+        </div>
+        <div class="coming-soon-card">
+          <span class="coming-soon-icon">&#9000;</span>
+          <p>Garmin</p>
+        </div>
+        <div class="coming-soon-card">
+          <span class="coming-soon-icon">&#9889;</span>
+          <p>EEG Data</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
