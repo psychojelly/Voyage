@@ -17,6 +17,7 @@
   --accent-workout: #55efc4;
   --accent-stress: #ffa500;
   --accent-danger: #d63031;
+  --accent-weather: #81ecec;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
   --radius: 12px;
   --radius-sm: 8px;
@@ -71,7 +72,6 @@ body {
 .main-content {
   flex: 1;
   margin-left: 220px;
-  max-width: 1400px;
   padding: 20px;
   position: relative;
   z-index: 1;
@@ -491,6 +491,7 @@ body {
 .section-title.heart { color: var(--accent-heart); }
 .section-title.workout { color: var(--accent-workout); }
 .section-title.stress { color: var(--accent-stress); }
+.section-title.weather { color: var(--accent-weather); }
 
 /* ===== Stats Row ===== */
 .stats-row {
@@ -2106,6 +2107,12 @@ body {
   color: var(--text-muted);
   max-width: 400px;
   line-height: 1.6;
+}
+
+.weather-location-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
 }
 
 /* ===== Goals Panel ===== */

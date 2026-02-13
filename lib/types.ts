@@ -59,6 +59,31 @@ export interface StressData {
   day_summary: string;      // "restored" | "normal" | "stressful"
 }
 
+// ── Weather data types ────────────────────────────
+
+export interface WeatherDay {
+  date: string;
+  temperature_max: number | null;
+  temperature_min: number | null;
+  precipitation_sum: number | null;
+  rain_sum: number | null;
+  windspeed_max: number | null;
+  uv_index_max: number | null;
+  humidity_mean: number | null;
+  pollen_tree: number | null;
+  pollen_grass: number | null;
+  pollen_weed: number | null;
+}
+
+export interface WeatherHourly {
+  time: string[];
+  temperature_2m: (number | null)[];
+  relative_humidity_2m: (number | null)[];
+  precipitation: (number | null)[];
+  windspeed_10m: (number | null)[];
+  uv_index: (number | null)[];
+}
+
 export type EventCategory = 'activity' | 'sleep' | 'health-note' | 'custom' | 'experience';
 
 export interface HealthEvent {
@@ -142,5 +167,8 @@ export interface Settings {
   allowAdmin?: boolean;
   allowArtist?: boolean;
   goals?: HealthGoal[];
+  weatherLat?: number;
+  weatherLon?: number;
+  weatherCity?: string;
   [key: string]: unknown;
 }

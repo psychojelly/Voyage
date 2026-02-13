@@ -564,6 +564,44 @@ export default function SettingsPanel({
             </select>
           </div>
 
+          {/* Weather Location */}
+          <div className="setting-group">
+            <h3>Weather Location</h3>
+            <p className="setting-hint">
+              Set your location for weather data on the External Stats page.
+              Leave blank to auto-detect from your browser.
+            </p>
+            <label>Latitude</label>
+            <input
+              type="number"
+              step="0.01"
+              value={settings.weatherLat ?? ''}
+              onChange={e => {
+                const val = e.target.value;
+                onUpdateSettings({ weatherLat: val ? parseFloat(val) : undefined });
+              }}
+              placeholder="Auto-detect"
+            />
+            <label>Longitude</label>
+            <input
+              type="number"
+              step="0.01"
+              value={settings.weatherLon ?? ''}
+              onChange={e => {
+                const val = e.target.value;
+                onUpdateSettings({ weatherLon: val ? parseFloat(val) : undefined });
+              }}
+              placeholder="Auto-detect"
+            />
+            <label>City / Label</label>
+            <input
+              type="text"
+              value={settings.weatherCity ?? ''}
+              onChange={e => onUpdateSettings({ weatherCity: e.target.value || undefined })}
+              placeholder="e.g. New York, NY"
+            />
+          </div>
+
           {/* Debug Data */}
           {!session?.user && (
             <div className="setting-group">

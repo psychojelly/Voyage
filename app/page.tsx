@@ -23,6 +23,9 @@ import ActivityOverlay from '@/components/charts/ActivityOverlay';
 import SleepOverlay from '@/components/charts/SleepOverlay';
 import ActivityCharts from '@/components/charts/ActivityCharts';
 import SyncPrompt from '@/components/SyncPrompt';
+import WeatherCharts from '@/components/charts/WeatherCharts';
+import WeatherIntraday from '@/components/charts/WeatherIntraday';
+import { useWeather } from '@/hooks/useWeather';
 import { clearSampleData, saveSampleDays } from '@/lib/store';
 import dynamic from 'next/dynamic';
 import type { DayRecord, HealthEvent, UserRole } from '@/lib/types';
@@ -84,6 +87,14 @@ export default function DashboardPage() {
     const monthStr = String(monthData.month).padStart(2, '0');
     return `${monthData.year}-${monthStr}-${dayStr}`;
   }, [monthData.year, monthData.month, monthData.day]);
+
+  // Weather data for External Stats page
+  const weather = useWeather({
+    startStr: monthData.startStr,
+    endStr: monthData.endStr,
+    focusDate: focusDateStr,
+    settings,
+  });
 
   // Fetch Google Calendar events when focus date changes
   useEffect(() => {
@@ -378,18 +389,57 @@ export default function DashboardPage() {
             </>
           )}
 
-          {/* External Stats: placeholder */}
+          {/* External Stats: Weather */}
           {activeTab === 'external' && (
-            <section className="metric-section placeholder-page">
-              <h2 className="section-title">External Stats</h2>
-              <div className="placeholder-content">
-                <span className="placeholder-icon">{'\u2197'}</span>
-                <p className="placeholder-text">External Stats coming soon</p>
-                <p className="placeholder-subtext">
-                  Environmental data, location analytics, and external health factors will appear here.
-                </p>
-              </div>
-            </section>
+            <>
+              <section className="metric-section">
+                <h2 className="section-title weather">Weather</h2>
+                {weather.error && (
+                  <div className="status-msg error">{weather.error}</div>
+                )}
+                {weather.loading && !weather.daily.length && (
+                  <p className="overlay-fallback">Loading weather data...</p>
+                )}
+                {weather.location && (
+                  <p className="weather-location-label">
+                    Location: {weather.locationLabel}
+                  </p>
+                )}
+                {!weather.location && !weather.loading && !weather.error && (
+                  <div className="placeholder-content">
+                    <p className="placeholder-text">Location Required</p>
+                    <p className="placeholder-subtext">
+                      Allow browser location access or set coordinates in Settings.
+                    </p>
+                    <button className="btn btn-primary" onClick={weather.detectLocation}>
+                      Detect Location
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              {weather.daily.length > 0 && (
+                <>
+                  <section className="metric-section">
+                    <h2 className="section-title weather">24-Hour Weather</h2>
+                    <WeatherIntraday
+                      date={focusDateStr}
+                      hourly={weather.hourly}
+                    />
+                  </section>
+                  <section className="metric-section">
+                    <h2 className="section-title weather">30-Day Weather Trends</h2>
+                    <WeatherCharts
+                      data={weather.daily}
+                      onDayClick={(date) => {
+                        const [y, m, d] = date.split('-').map(Number);
+                        monthData.setFullDate(y, m, d);
+                      }}
+                    />
+                  </section>
+                </>
+              )}
+            </>
           )}
 
           {/* Internal Stats: all chart sections */}
