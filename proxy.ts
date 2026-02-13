@@ -32,7 +32,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   // Permissions policy — restrict sensitive APIs
   response.headers.set(
     'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), payment=()'
+    'camera=(), microphone=(), geolocation=(self), payment=()'
   );
 
   // Cross-origin isolation
@@ -47,7 +47,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    "connect-src 'self' https://api.ouraring.com https://www.googleapis.com https://accounts.google.com",
+    "connect-src 'self' https://api.ouraring.com https://www.googleapis.com https://accounts.google.com https://api.open-meteo.com https://archive-api.open-meteo.com https://air-quality-api.open-meteo.com",
     "worker-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",
