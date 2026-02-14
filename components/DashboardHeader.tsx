@@ -9,6 +9,7 @@ interface DashboardHeaderProps {
   onPrev: () => void;
   onNext: () => void;
   onSettingsToggle: () => void;
+  onChatToggle: () => void;
   year: number;
   month: number;
   selectedDay: number | null;
@@ -20,6 +21,7 @@ export default function DashboardHeader({
   onPrev,
   onNext,
   onSettingsToggle,
+  onChatToggle,
   year,
   month,
   selectedDay,
@@ -65,6 +67,7 @@ export default function DashboardHeader({
       </div>
 
       <div className="header-actions">
+        <button className="icon-btn" aria-label="Chat" onClick={onChatToggle}>&#x1F4AC;</button>
         <button className="icon-btn" aria-label="Settings" onClick={onSettingsToggle}>&#9881;</button>
         <UserMenu />
       </div>

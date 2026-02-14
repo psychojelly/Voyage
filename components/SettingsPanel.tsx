@@ -602,6 +602,23 @@ export default function SettingsPanel({
             />
           </div>
 
+          {/* AI Chat */}
+          <div className="setting-group">
+            <h3>AI Chat</h3>
+            <label className="debug-data-toggle">
+              <input
+                type="checkbox"
+                checked={!!settings.geminiHealthContext}
+                onChange={e => onUpdateSettings({ geminiHealthContext: e.target.checked })}
+              />
+              Include health data in chat context
+            </label>
+            <p className="setting-hint">
+              When enabled, your selected day&apos;s health data (sleep, heart rate, activity, stress)
+              is sent to Google Gemini so it can answer questions about your metrics.
+            </p>
+          </div>
+
           {/* Debug Data */}
           {!session?.user && (
             <div className="setting-group">

@@ -13,6 +13,7 @@ import Sidebar from '@/components/Sidebar';
 import GoalsPanel from '@/components/GoalsPanel';
 import ArtView from '@/components/ArtView';
 import SettingsPanel from '@/components/SettingsPanel';
+import ChatPanel from '@/components/ChatPanel';
 import DayDetail from '@/components/DayDetail';
 import SleepCharts from '@/components/charts/SleepCharts';
 import HeartCharts from '@/components/charts/HeartCharts';
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   const oura = useOuraConnection();
   const gcal = useGoogleCalendar();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [gcalEvents, setGcalEvents] = useState<HealthEvent[]>([]);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [bgEffect, setBgEffect] = useState('particles');
@@ -327,6 +329,12 @@ export default function DashboardPage() {
         onGcalSelectedIdsChange={gcal.setSelectedIds}
       />
 
+      <ChatPanel
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        healthContext={settings.geminiHealthContext ? displayDayRecord : undefined}
+      />
+
       <div className={`app-layout${artMode ? ' art-mode' : ''}`}>
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -336,6 +344,7 @@ export default function DashboardPage() {
             onPrev={monthData.prevMonth}
             onNext={monthData.nextMonth}
             onSettingsToggle={() => setSettingsOpen(o => !o)}
+            onChatToggle={() => setChatOpen(o => !o)}
             year={monthData.year}
             month={monthData.month}
             selectedDay={monthData.day}
